@@ -3,12 +3,13 @@ import pandas as pd
 import numpy as np
 import shap
 import pickle
+import matplotlib.pyplot as plt
 
 # Load model
 with open("best_rf_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-# Load test data for SHAP
+# Load test data for SHAP summary plot
 x_test = pd.read_csv("x_test.csv")
 
 # SHAP explainer
@@ -50,13 +51,24 @@ if st.button("Predict Loan Status"):
     input_data['education'] = input_data['education'].map({"Graduate": 1, "Not Graduate": 0})
     input_data['self_employed'] = input_data['self_employed'].map({"Yes": 1, "No": 0})
 
-    prediction = model.predict(input_data)[0]
-    result = "✅ Loan Approved" if prediction == 1 else "❌ Loan Rejected"
-    st.subheader(f"Prediction: {result}")
+    try:
+        # Make prediction
+        prediction = model.predict(input_data)[0]
+        result = "✅ Loan Approved" if prediction == 1 else "❌ Loan Rejected"
+        st.subheader(f"Prediction: {result}")
 
-    # SHAP explanation
-    shap_values = explainer(input_data)
-    st.subheader("SHAP Explanation for this Applicant")
-    shap.initjs()
-    st_shap = st.components.v1.html(shap.plots.force(shap_values[0], matplotlib=False), height=300)
+        # SHAP force plot for this applicant
+        shap_values = explainer.shap_values(input_data)
+        st.subheader("🔍 SHAP Explanation for this Applicant")
+        shap.initjs()
+        st.components.v1.html(shap.plots.force(shap_values[1][0], matplotlib=False), height=300)
 
+        # SHAP summary plot for model explanation
+        st.subheader("📊 Overall Feature Importance (SHAP Summary Plot)")
+        shap_values_all = explainer.shap_values(x_test)
+        plt.figure()
+        shap.summary_plot(shap_values_all[1], x_test, show=False)
+        st.pyplot(bbox_inches='tight')
+
+    except Exception as e:
+        st.error(f"⚠️ An error occurred during prediction or explanation: {e}")
