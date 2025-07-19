@@ -4,5 +4,4 @@ numpy
 scikit-learn
 shap
 ipython
-streamlit-shap
-
+matplotlib
