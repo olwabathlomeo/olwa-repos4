@@ -53,19 +53,20 @@ if st.button("Predict Loan Approval"):
     st.markdown(f"**Prediction:** {'✅ Loan Approved' if prediction == 1 else '❌ Loan Rejected'}")
     st.markdown(f"**Approval Probability:** `{prediction_proba:.2f}`")
 
-    # SHAP Explanation
+        # SHAP Explanation
     st.subheader("SHAP Explanation for this Applicant")
     try:
         explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(x_test)
-        st.markdown("🔍 Feature impact:")
+        shap_values = explainer.shap_values(input_data)
 
-        # Combine x_test and input for display context
-        x_display = pd.concat([input_data, x_test.iloc[:10]], axis=0)
+        # For classification, shap_values is a list — take class 1
+        if isinstance(shap_values, list):
+            shap_values = shap_values[1]
 
-        # SHAP force plot fallback using summary bar plot
+        st.markdown("🔍 Feature impact bar chart:")
+
         fig, ax = plt.subplots()
-        shap.summary_plot(shap_values[1], x_display, plot_type="bar", show=False)
+        shap.summary_plot(shap_values, input_data, plot_type="bar", show=False)
         st.pyplot(fig)
 
     except Exception as e:
