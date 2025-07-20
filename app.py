@@ -8,6 +8,14 @@ import pickle
 with open('best_rf_model.pkl', 'rb') as model_file:
     model = pickle.load(model_file)
 
+# Expected columns from training
+expected_columns = [
+    'no_of_dependents', 'education', 'self_employed',
+    'income_annum', 'loan_amount', 'loan_term', 'cibil_score',
+    'residential_assets_value', 'commercial_assets_value',
+    'luxury_assets_value', 'bank_asset_value'
+]
+
 # App configuration
 st.set_page_config(page_title="Loan Approval Predictor", page_icon="🏦")
 st.title("🏦 Loan Approval Predictor")
@@ -32,42 +40,42 @@ with st.form(key='input_form'):
     submit = st.form_submit_button("Predict")
 
 if submit:
-    # Create DataFrame from inputs
+    # Create dictionary from inputs
     input_dict = {
-        'no_of_dependents': [no_of_dependents],
-        'education': [1 if education == "Graduate" else 0],
-        'self_employed': [1 if self_employed == "Yes" else 0],
-        'income_annum': [income_annum],
-        'loan_amount': [loan_amount],
-        'loan_term': [loan_term],
-        'cibil_score': [cibil_score],
-        'residential_assets_value': [residential_assets_value],
-        'commercial_assets_value': [commercial_assets_value],
-        'luxury_assets_value': [luxury_assets_value],
-        'bank_asset_value': [bank_asset_value]
+        'no_of_dependents': no_of_dependents,
+        'education': 1 if education == "Graduate" else 0,
+        'self_employed': 1 if self_employed == "Yes" else 0,
+        'income_annum': income_annum,
+        'loan_amount': loan_amount,
+        'loan_term': loan_term,
+        'cibil_score': cibil_score,
+        'residential_assets_value': residential_assets_value,
+        'commercial_assets_value': commercial_assets_value,
+        'luxury_assets_value': luxury_assets_value,
+        'bank_asset_value': bank_asset_value
     }
 
-    input_df = pd.DataFrame(input_dict)
+    # Create single-row DataFrame with exact column names
+    input_df = pd.DataFrame([input_dict])[expected_columns]
 
     # ✅ Predict
     prediction = model.predict(input_df)[0]
     prediction_proba = model.predict_proba(input_df)[0][1]
 
-    # ✅ Display prediction
+    # ✅ Display result
     st.subheader("🔍 Prediction Result")
     if prediction == 1:
         st.success(f"✅ Loan Approved with a probability of {prediction_proba:.2f}")
     else:
         st.error(f"❌ Loan Rejected with a probability of {1 - prediction_proba:.2f}")
 
-    # ✅ SHAP explanation
+    # ✅ SHAP Explanation
     st.subheader("📊 SHAP Explanation")
 
-    # Initialize TreeExplainer
     explainer = shap.TreeExplainer(model)
     shap_values = explainer(input_df)
 
-    # SHAP waterfall plot for this individual
     st.set_option('deprecation.showPyplotGlobalUse', False)
     st.write("Feature contributions to this prediction:")
     shap.plots.waterfall(shap_values[0], max_display=11)
+
